@@ -1,0 +1,591 @@
+{% extends "common/base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+{% import "common/_macros.html" as macros %}
+
+{% block title %}TOPULOGY{% endblock %}
+
+{% block page_content %}
+<div class="page-header">
+    <h1>Hello, {% if current_user.is_authenticated %}{{ current_user.username }}{% else %}游客{% endif %}!</h1>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script type="text/javascript">
+	 $(function() {
+
+	 	var new_data = {"nodes":[],"links":[]};
+	 	var width_2 = $(window).width();
+		 	var height_2;
+		 	if(parent){
+		 		height_2 = $(parent).height();
+		 	}else{
+		 		height_2 = $(window).height();
+		 	}
+
+		 	//------------------define force char----------------
+		 	var link,node,node_text,path,linklabels;
+		 	var graph = {links:[],nodes:[]};
+
+		 	var div = d3.select("body").append("div")
+ 			.attr("class", "tooltip")
+ 			.style("opacity", 0);
+
+		 	var simulation = d3.forceSimulation()
+		 			.force("link", d3.forceLink().id(function(d) {
+		 				return d.id;
+		 			}))
+		 			.force("charge", d3.forceManyBody().strength(-400))
+		 			//.force("center", d3.forceCenter(width_2 / 2, height_2 / 2))
+		 			 .force("xPos", d3.forceX(width_2/2))
+    				.force("yPos", d3.forceY(height_2/2))
+		 			.on("tick",tickHandle);
+		 	simulation.stop();
+
+		 	var force_svg = d3.select("body").append("div")
+ 			.append("svg")
+ 			.attr("width", width_2)
+ 			.attr("height", height_2)
+ 			.style("fill","white")
+		 	.call(d3.zoom().scaleExtent([1 / 2, 8]).on("zoom", function () {force_svg.attr("transform", d3.event.transform)})).append("g");
+
+            force_svg.append('defs').append('marker')
+		        .attr('id','end')
+		        .attr('viewBox','-0 -5 10 10')
+		        .attr('refX',25)
+		        .attr('refY',0)
+		        .attr('orient','auto')
+		        .attr('markerWidth',10)
+		        .attr('markerHeight',10)
+		        .attr('xoverflow','visible')
+		        .append('svg:path')
+		            .attr('d', 'M 0,-5 L 10 ,0 L 0,5')
+		            .attr('fill', '#ccc')
+		            .attr('stroke','#ccc');
+
+		 	force_svg.append("g").attr("id","link_group");
+		 	force_svg.append("g").attr("id","path_group");
+		 	force_svg.append("g").attr("id","node_group");
+		 	force_svg.append("g").attr("id","lable_group");
+
+		 	path =   force_svg.select("#path_group").selectAll(".path");
+		 	node = force_svg.select("#node_group").selectAll(".node");
+		 	link = force_svg.select("#link_group").selectAll(".line");
+		 	linklabels = force_svg.select("#lable_group").selectAll(".lable");
+		 	function showForce(){
+		 		//link
+		 		link  = link.data(graph.links);
+		 		link.exit().remove();
+		 		var linkEnter = link
+		 	      .enter()
+		 	      .append("line")
+		 	      .attr("class","link")
+		 	      .attr("id",function(d,i) {return 'line'+i})
+		 	      .attr('marker-end','url(#end)')
+		 	      .style("stroke","#ccc")
+		 	      .style("pointer-events", "none");
+
+		 		path = path.data(graph.links);
+		 		path.exit().remove();
+		 		var pathEnter = path.enter().append('path').
+		 		attr('class','path')
+		         .attr('fill-opacity',0)
+		                .attr('stroke-opacity',0)
+		               	.attr('fill','blue')
+		                .attr('stroke','red')
+		                .attr('id',function(d,i) {return 'link'+i})
+		         .style("pointer-events", "none");
+		 		path = pathEnter.merge(path);
+
+		 		linklabels = linklabels.data(graph.links);
+		 		//remove exit
+		 		linklabels.exit().remove();
+		 		var linklabelsEnter = linklabels.enter().append('text')
+		         .style("pointer-events", "none")
+		         .attr('id',function(d,i){return 'linklabe'+i})
+		                .attr('dx',80)
+		                .attr('dy',0)
+		                .attr('font-size',10)
+		                .attr('fill','#aaa');
+		        //update
+		 		linklabels.select("text").select("textPath").attr('xlink:href',function(d,i) {return '#link'+i})
+		         .style("pointer-events", "none")
+		         .text(function(d,i){
+					return d.type;
+		         });
+
+		 		//new
+		 		linklabelsEnter.append('textPath')
+		         .attr('xlink:href',function(d,i) {return '#link'+i})
+		         .style("pointer-events", "none")
+		         .text(function(d,i){
+					return d.type;
+		         });
+		 		linklabels = linklabelsEnter.merge(linklabels);
+		 		link = linkEnter.merge(link);
+
+
+		 		//node
+		 		node = node.data(graph.nodes/* ,function(d,i){
+		 			return d.id + d.type + d.state;
+		 		} */);
+
+		 		//remove
+		        node.exit().remove();
+		 		var nodeEnter = node.enter()
+	 			.append("g")
+	 			.attr("class","node")
+	 			.on("mouseover", function(d) {
+	 				div.transition()
+	 					.duration(200)
+	 					.style("opacity", .9);
+	 				div.html(d.node_output)
+	 					.style("left", (d3.event.pageX) + "px")
+	 					.style("top", (d3.event.pageY - 50) + "px");
+	 				d3.select(this).select("image").transition()
+                    .duration(200)
+                    .attr("x", -32)
+    	 			.attr("y", -32)
+    	 			.attr("width", 48)
+    	 			.attr("height", 48);
+
+	 				d3.select(this).select("text").transition()
+	 		        .duration(200)
+	 		        .attr("dx", -32)
+	 		        .attr("dy",-32)
+	 		        .style("fill", "blue")
+	 		        //.style("stroke", "lightsteelblue")
+	 		       // .style("stroke-width", ".5px")
+	 		        .style("font", "20px sans-serif")
+	 				.style("z-index",999);
+
+	 			}).on("mouseout", function () {
+	 				div.transition()
+ 					.duration(200)
+ 					.style("opacity", 0);
+	 				d3.select(this).select("image").transition()
+                    .duration(200)
+                    .attr("x", -16)
+    	 			.attr("y", -16)
+    	 			.attr("width", 32)
+    	 			.attr("height", 32);
+	 				d3.select(this).select("text").transition()
+	 		        .duration(200)
+	 		        .attr("dx",20)
+	 		        .attr("dy",8)
+	 		        .style("fill", "black")
+	 		        .style("stroke", null)
+	 		        .style("stroke-width", null)
+	 		        .style("font", null)
+	 		        .style("z-index",null);
+	 	        })
+	 			.call(d3.drag().on("start", dragstarted)
+		 				.on("drag", dragged)
+		 				.on("end", dragended));
+
+
+		 		//update
+		 		node.select("text").text(function(d) {
+	 					return d.alias;
+	 			});
+	 			//new
+		 		node_text = nodeEnter.append("text")
+	 			.style("fill", "black")
+	 			.attr("dx", 20)
+	 			.attr("dy", 8)
+	 			.text(function(d) {
+                        return d.alias;
+	 			});
+
+		 		//update
+		 		node.select("circle").style("stroke",function(d,i){
+	 					if(d.state == 1){
+	 						return "yellow";
+	 					}else if(d.state == 2){
+	 						return "red";
+	 					}else if(d.state >0){
+	 						return "#919191";
+	 					}
+	 				if(d.state == null ){
+ 						return "#919191";
+ 					}
+	 			})
+	 			.style("opacity", function(d,i){
+	 				if(d.type == "SERVICE" || d.type == "HOST"){
+	 					if(d.state >0 || d.state== null){
+		 					return 1;
+		 				}else{
+		 					return 0;
+		 				}
+	 				}else{
+	 					return 0;
+	 				}
+	 			});
+
+		 		//new
+		 		var node_circle = nodeEnter.append("circle").style("fill","none")
+		 			.attr("r",17)
+		 			.style("stroke-width","3")
+		 			.style("stroke",function(d,i){
+		 				if(d.type == "HOST"){
+		 					if(d.state == 1){
+		 						return "yellow";
+		 					}else if(d.state == 2){
+		 						return "red";
+		 					}else if(d.state >0){
+		 						return "#919191";
+		 					}
+		 				}else if(d.type == "SERVICE"){
+		 					if(d.state == 1){
+		 						return "yellow";
+		 					}else if(d.state == 2){
+		 						return "#FF8888";
+		 					}else if(d.state == 3){
+		 						return "red";
+		 					}else if(d.state >0){
+		 						return "#919191";
+		 					}
+		 				}
+		 				if(d.state == null){
+	 						return "#919191";
+	 					}
+		 			})
+		 			.style("opacity", function(d,i){
+		 				if(d.type == "SERVICE" || d.type == "HOST"){
+		 					if(d.state >0 || d.state== null){
+			 					return 1;
+			 				}else{
+			 					return 0;
+			 				}
+		 				}else{
+		 					return 0;
+		 				}
+		 			}).transition()
+		 	    .duration(1000)
+		 	    .delay(function(d,i){
+		 	    	if(i){
+						return i*10;
+		 	    	}
+		 	    	return 10;
+		 	    })
+		 	    .on("start", function repeat(d) {
+		 	        d3.active(this)
+		 	            .attr("r", 17)
+		 	            .style("opacity",1)
+		 	          .transition()
+		 	           .attr("r", 100)
+		 	           .style("opacity",0)
+		 	          .transition()
+		 	            .on("start", repeat);
+		 	      });
+
+
+		 		//update
+		 		node.select("image").attr("xlink:href", function(d, i) {
+	 				if (d.type == "SERVICE") {
+	 					return "{{ url_for('static', filename='group.png') }}";
+	 				} else if (d.type == "HOST") {
+	 					return "{{ url_for('static', filename='group.png') }}";
+	 				} else {
+	 					return null;
+	 				}
+	 			});
+
+		 		//new
+		 		var node_image = nodeEnter.append("image")
+	 			.attr("xlink:href", function(d, i) {
+	 				if (d.type == "SERVICE") {
+	 					return "{{ url_for('static', filename='group.png') }}";
+	 				} else if (d.type == "HOST") {
+	 					return "{{ url_for('static', filename='group.png') }}";
+	 				} else {
+	 					return null;
+	 				}
+	 			})
+	 			.attr("x", -16)
+	 			.attr("y", -16)
+	 			.attr("width", 32)
+	 			.attr("height", 32);
+
+
+		 		node = nodeEnter.merge(node);
+
+
+
+		 		simulation.stop();
+
+	 		    simulation.nodes(graph.nodes);
+
+	 		    simulation.force("link").links(graph.links).distance(120);
+	 		    simulation.alpha(1);
+	 		    simulation.restart();
+
+		 	}
+
+
+		 	function dragstarted(d) {
+	 			if (!d3.event.active) simulation.alphaTarget(0.3).restart();
+	 			d.fx = d.x;
+	 			d.fy = d.y;
+	 		}
+
+	 		function dragged(d) {
+	 			d.fx = d3.event.x;
+	 			d.fy = d3.event.y;
+	 		}
+
+	 		function dragended(d) {
+	 			if (!d3.event.active) simulation.alphaTarget(0);
+	 			d.fx = null;
+	 			d.fy = null;
+	 		}
+
+		 	function tickHandle() { //对于每一个时间间隔
+	 			node.attr("cx", function(d) {
+	 					return d.x = Math.max(16, Math.min(width_2 - 16, d.x));
+	 				})
+	 				.attr("cy", function(d) {
+	 					return d.y = Math.max(16, Math.min(height_2 - 16, d.y));
+	 				});
+
+	 			 link.attr("x1", function(d) {
+	 					return d.source.x;
+	 				})
+	 				.attr("y1", function(d) {
+	 					return d.source.y;
+	 				})
+	 				.attr("x2", function(d) {
+	 					return d.target.x;
+	 				})
+	 				.attr("y2", function(d) {
+	 					return d.target.y;
+	 				});
+	 			path.attr("d", function(d) {
+	 		        return "M" +
+ 		            d.source.x + "," +
+ 		            d.source.y + "L" +
+ 		            (d.target.x) + "," +
+ 		            (d.target.y)}
+ 		            );
+	 			linklabels.attr('transform',function(d,i){
+	 	            if (d.target.x<d.source.x){
+	 	                bbox = this.getBBox();
+	 	                rx = bbox.x+bbox.width/2;
+	 	                ry = bbox.y+bbox.height/2;
+	 	                return 'rotate(180 '+rx+' '+ry+')';
+	 	                }
+	 	            else {
+	 	                return 'rotate(0)';
+	 	                }
+	 	        });
+
+
+	 			node.attr("transform", function(d) {
+	 				return "translate(" + d.x + "," + d.y + ")";
+	 			});
+
+	 			//更新文字坐标
+	 			node_text.attr("x", function(d) {
+	 					return d.x;
+	 				})
+	 				.attr("y", function(d) {
+	 					return d.y;
+	 				});
+	 		}
+
+
+			//-------------------define force end----------------
+		 	function myGraph() {
+		 		//---------node------------------------------
+		 		this.findNode = function(id) {
+		 			for (var i in graph.nodes) {
+		 				if (graph.nodes[i]["id"] === id) return graph.nodes[i];
+		 			}
+		 			return null;
+		 		};
+
+		 		this.findNodeIndex = function(id) {
+		 			for (var i = 0; i < graph.nodes.length; i++) {
+		 				if (graph.nodes[i].id == id) {
+		 					return i;
+		 				}
+		 			}
+		 			return null;
+		 		};
+		 		this.removeNodeByIndex = function(index, id) {
+		 			var i = graph.links.length;
+		 			while (i--) {
+		 				if ((graph.links[i]['source_id']== id) || (graph.links[i]['target_id']== id)) {
+		 					graph.links.splice(i, 1);
+		 				}
+		 			}
+		 			graph.nodes.splice(index, 1);
+		 		};
+
+		 		this.clearNode = function(new_nodes) {
+		 			var i = this.getNodeLength();
+		 			if (new_nodes.length < i) {
+		 				while (i--) {
+		 					if (!this.findeNodeInArray(new_nodes, graph.nodes[i]["id"])) {
+		 						this.removeNodeByIndex(i, graph.nodes[i]["id"]);
+		 					}
+		 				}
+		 			}
+		 			update();
+		 		}
+
+		 		this.getNodeLength = function() {
+		 			if (graph && graph.nodes) {
+		 				return graph.nodes.length;
+		 			}
+		 			return 0;
+		 		}
+		 		this.findeNodeInArray = function(obj_arr, id) {
+		 			for (var n in obj_arr) {
+		 				if (n["id"] === id) return n;
+		 			}
+		 			return null;
+		 		};
+
+		 		this.addNode = function(new_node) {
+		 			graph.nodes.push( jQuery.extend(true, {}, new_node));
+		 			update();
+		 		};
+
+		 		this.updateNode = function(new_data_node) {
+		 			var index = this.findNodeIndex(new_data_node.id);
+		 			if (index) {
+		 				for (var attr in new_data_node) {
+		 					if (new_data_node.hasOwnProperty(attr)) graph.nodes[index][attr] = new_data_node[attr];
+		 				}
+		 			}
+		 			update();
+		 		}
+
+		 		//---------------link--------------
+
+		 		this.findLink = function(source, target) {
+		 			for (var i = 0; i < graph.links.length; i++) {
+		 				if (graph.links[i].source_id == source && graph.links[i].target_id == target) {
+		 					return graph.links[i];
+		 				}
+		 			}
+		 			return null;
+		 		}
+
+		 		this.findLinkInArray = function(objArray, link) {
+		 			for (var l in objArray) {
+		 				if (l.source_id== link.source_id && l.target_id == link.target_id) {
+		 					return l;
+		 				}
+		 			}
+		 			return null;
+		 		}
+
+		 		this.clearLink = function(links) {
+		 			var i = graph.links.length;
+		 			if (links.length < i) {
+		 				while(i--){
+		 					if (!this.findLinkInArray(links, graph.links[i])) {
+		 						graph.links.splice(i, 1);
+		 					}
+		 				}
+		 			}
+		 			update();
+		 		}
+
+
+		 		this.removeLink = function(source, target) {
+		 			for (var i = 0; i < graph.links.length; i++) {
+		 				if (graph.links[i].source_id == source_id && graph.links[i].target_id == target_id) {
+		 					graph.links.splice(i, 1);
+		 					break;
+		 				}
+		 			}
+		 			update();
+		 		};
+
+		 		this.removeallLinks = function() {
+		 			graph.links.splice(0, graph.links.length);
+		 			update();
+		 		};
+
+		 		this.removeAllNodes = function() {
+		 			graph.nodes.splice(0, graph.nodes.length);
+		 			update();
+		 		};
+
+		 		this.addLink = function(newLink) {
+		 			graph.links.push(jQuery.extend(true, {}, newLink));
+		 			update();
+		 		};
+
+		 		var update = function() {
+		 			showForce();
+		 			if(parent.iframeLoaded){
+		 				parent.iframeLoaded();
+		 			}
+		 		};
+
+
+		 		// Make it all go
+		 		update();
+		 	}
+
+
+		 	var my_graph;
+		 	function reloadData() {
+		 		if(!my_graph){
+			 		my_graph = new myGraph();
+		 		}
+				//handle node
+	 			$.each(new_data.nodes, function(i,new_node) {
+	 				var old_node = my_graph.findNode(new_node.id);
+	 				if (!old_node) {
+	 					my_graph.addNode(new_node);
+	 				} else {
+	 					my_graph.updateNode(new_node);
+	 				}
+	 			});
+	 			my_graph.clearNode(new_data.nodes);
+
+	 			//handle line
+	 			$.each(new_data.links,function(i,new_link) {
+	 				var old_link = my_graph.findLink(new_link.source, new_link.target);
+	 				if (!old_link) {
+	 					my_graph.addLink(new_link);
+	 				} else {
+	 					old_link.type = new_link.type;
+	 				}
+	 			});
+	 			my_graph.clearLink(new_data.links);
+		 	}
+			reloadData();
+
+
+		 	$(window).resize(function() {
+		 		width_2 = $(window).width();
+		 		height_2 = $(window).height();
+		 		//console.log("resize");
+		 		reloadData();
+		 	});
+
+		 });
+
+	      //定时生成新数据
+//		 	d3.interval(function() {
+//		 		new_data.nodes[Math.floor(Math.random()*new_data.nodes.length)].state = Math.floor(Math.random()*4);
+//		 		reloadData();
+//		 	}, 5000, d3.now());
+            namespace = '/test';
+            var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port + namespace);
+            socket.on('my_response', function(msg) {
+                new_data = msg.graph;
+                reloadData();
+            });
+	</script>
+
+{{ pagedown.include_pagedown() }}
+{% endblock %}
