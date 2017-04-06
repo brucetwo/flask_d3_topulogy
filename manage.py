@@ -8,6 +8,7 @@ from flask_script import Manager, Shell
 from flask_migrate import Migrate, MigrateCommand
 from flask_socketio import SocketIO, emit, join_room, leave_room, \
     close_room, rooms, disconnect
+from flask import json
 
 app = create_app(os.getenv('FLASK_CONFIG') or 'default')
 manager = Manager(app)
@@ -17,29 +18,41 @@ async_mode = None
 socketio = SocketIO(app, async_mode=async_mode)
 thread = None
 
-def background_thread():
-    """send server generated events to clients."""
-    count = 0
-    while True:
-        socketio.sleep(2)
-        Graph.generate_fake(1)
-        Node.generate_fake(15)
-        Link.generate_fake(24)
-        graph = Graph.query.order_by(Graph.timestamp.desc()).first().to_json();
-        print(graph)
-        socketio.emit('my_response', {'graph': graph}, namespace='/test')
 
-def collect_date():
-    total_pattern = "^(\d+) job step\(s\) in queue, (\d+) waiting, (\d+) pending, (\d+) running, (\d+) held, (\d+) preempted"
-    total_prog = re.compile(total_pattern)
-    total_prog_result = total_prog.match(result_lines[-2])
-    llq_summary = dict()
-    llq_summary['in_queue'] = total_prog_result.group(1)
-    llq_summary['waiting'] = total_prog_result.group(2)
-    llq_summary['pending'] = total_prog_result.group(3)
-    llq_summary['running'] = total_prog_result.group(4)
-    llq_summary['held'] = total_prog_result.group(6)
-    llq_summary['preempted'] = total_prog_result.group(5)
+#
+# def background_thread():
+#     """send server generated events to clients."""
+#     count = 0
+#     while True:
+#         socketio.sleep(2)
+#         # Graph.generate_fake(1)
+#         # Node.generate_fake(15)
+#         # Link.generate_fake(24)
+#         # graph = Graph.query.order_by(Graph.timestamp.desc()).first().to_json();
+#         # count = count + 1;
+#         socketio.emit('eb', {'data': 'ff'}, namespace='/test')
+
+
+@socketio.on('my_ping', namespace='/test')
+def ping_pong():
+    Graph.generate_fake(1)
+    Node.generate_fake(5)
+    Link.generate_fake(6)
+    graph = Graph.query.order_by(Graph.id.desc()).first();
+    emit('my_pong', {'data': json.dumps(graph.serialize)})
+
+
+# def collect_date():
+#     total_pattern = "^(\d+) job step\(s\) in queue, (\d+) waiting, (\d+) pending, (\d+) running, (\d+) held, (\d+) preempted"
+#     total_prog = re.compile(total_pattern)
+#     total_prog_result = total_prog.match(result_lines[-2])
+#     llq_summary = dict()
+#     llq_summary['in_queue'] = total_prog_result.group(1)
+#     llq_summary['waiting'] = total_prog_result.group(2)
+#     llq_summary['pending'] = total_prog_result.group(3)
+#     llq_summary['running'] = total_prog_result.group(4)
+#     llq_summary['held'] = total_prog_result.group(6)
+#     llq_summary['preempted'] = total_prog_result.group(5)
 
 
 def make_shell_context():

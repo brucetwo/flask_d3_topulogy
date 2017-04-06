@@ -5,6 +5,7 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'I have a pen'
     SQLALCHEMY_COMMIT_ON_TEARDOWN = True
+    FLASKY_SLOW_DB_QUERY_TIME = 5000
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     MAIL_SERVER = 'smtp.google.com'
     MAIL_PORT = 587

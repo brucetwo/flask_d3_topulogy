@@ -1,6 +1,7 @@
-from flask import render_template, redirect, url_for, abort, flash, request,\
+from flask import render_template, redirect, url_for, abort, flash, request, \
     current_app
 from flask_login import login_required, current_user
+from flask_sqlalchemy import get_debug_queries
 from . import topulogy
 from .forms import PostForm
 from .. import db
@@ -29,16 +30,15 @@ def server_shutdown():
     shutdown()
     return 'Shutting down...'
 
+
 @topulogy.route('/', methods=['GET', 'POST'])
 @login_required
 def index():
     show_force = False
     graph = None
-    graph = Graph.query.first_or_404()
-    show_force = bool(request.cookies.get('show_force', ''))
-    return render_template('index.html', graph=graph,
-                           show_force=show_force)
-
+    # graph = Graph.query.first_or_404()
+    # show_force = bool(request.cookies.get('show_force', ''))
+    return render_template('index.html', graph=graph, show_force=show_force)
 
 
 @topulogy.route('/user/<username>')
@@ -51,7 +51,6 @@ def user(username):
     posts = pagination.items
     return render_template('user.html', user=user, posts=posts,
                            pagination=pagination)
-
 
 
 @topulogy.route('/post/<int:id>')

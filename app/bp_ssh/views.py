@@ -36,7 +36,7 @@ import paramiko
 
 @bp_ssh.route('/', methods=['GET', 'POST'])
 @login_required
-def editssh():
+def index():
     sshForm = EditSSHForm()
     readLines = None
     if sshForm.validate_on_submit():
@@ -51,7 +51,7 @@ def editssh():
             session['readLines']=readLines
             return redirect(url_for('.regex', id=ssh.id))
             flash('ssh success')
-    return render_template('edit_post.html', sshForm=sshForm)
+    return render_template('index.html')
 
 @bp_ssh.route('/regex/<int:id>')
 @login_required
@@ -64,3 +64,8 @@ def regexSsh(id):
 
     return render_template('edit_post.html', regexForm=regexForm, readLines=session.get('readLines'))
 
+@bp_ssh.route('/dispatch')
+@login_required
+def dispatch():
+
+    return render_template('index.html', regexForm=regexForm, readLines=session.get('readLines'))

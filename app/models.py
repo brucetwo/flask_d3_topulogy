@@ -4,7 +4,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 from markdown import markdown
 import bleach, paramiko
-from flask import current_app, request
+from flask import current_app, request, jsonify
 from flask_login import UserMixin, AnonymousUserMixin
 from . import db, login_manager
 from random import seed, randint
@@ -37,7 +37,7 @@ class Role(db.Model):
             #               Permission.COMMENT |
             #               Permission.WRITE_ARTICLES |
             #               Permission.MODERATE_COMMENTS, False),
-            'Administrator': (0xff, False)
+            'Administrator': (0xff, True)
         }
         for r in roles:
             role = Role.query.filter_by(name=r).first()
@@ -58,13 +58,24 @@ class Graph(db.Model):
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     nodes = db.relationship('Node', backref='graph', lazy='dynamic')
     links = db.relationship('Link', backref='graph', lazy='dynamic')
-    def to_json(self):
-        json_graph = {
-                'nodes': self.nodes,
-                'links': self.links,
-            }
-        return json.dumps(json_graph)
 
+    @property
+    def serialize(self):
+        """Return object data in easily serializeable format"""
+        return {
+            'id': self.id,
+            'timestamp': [self.timestamp.strftime("%Y-%m-%d"), self.timestamp.strftime("%H:%M:%S")],
+            'nodes': self.serialize_nodes,
+            'links': self.serialize_links
+        }
+
+    @property
+    def serialize_nodes(self):
+        return [item.serialize for item in self.nodes]
+
+    @property
+    def serialize_links(self):
+        return [item.serialize for item in self.links]
     @staticmethod
     def generate_fake(count=1):
         seed()
@@ -74,6 +85,7 @@ class Graph(db.Model):
             db.session.commit()
 
 
+
 class Link(db.Model):
     __tablename__ = 'links'
     id = db.Column(db.Integer, primary_key=True)
@@ -81,19 +93,20 @@ class Link(db.Model):
     target_id = db.Column(db.Integer, db.ForeignKey('nodes.id'))
     type = db.Column(db.String(20))
     graph_id = db.Column(db.Integer, db.ForeignKey('graphs.id'))
-    def to_json(self):
-        json_link ={
-            'id': self.id,
-            'source_id': self.source_id,
-            'target_id': self.target_id,
-            'type': self.type
-        }
-        return json.dumps(json_link)
 
+    @property
+    def serialize(self):
+        """Return object data in easily serializeable format"""
+        return {
+            'id': self.id,
+            'source': self.source_id,
+            'target': self.target_id,
+            'type': self.id
+        }
     @staticmethod
     def generate_fake(count=3):
         seed()
-        graph = Graph.query.order_by(Graph.timestamp.desc()).first()
+        graph = Graph.query.order_by(Graph.id.desc()).first()
         node_count = Node.query.filter_by(graph=graph).count()
         for i in range(count):
             source = Node.query.filter_by(graph=graph).offset(randint(0, node_count - 1)).first()
@@ -101,20 +114,21 @@ class Link(db.Model):
             link = Link(source=source,
                         target=target,
                         graph=graph
-                     )
+                        )
             db.session.add(link)
             db.session.commit()
 
+
 class Node(db.Model):
     __tablename__ = 'nodes'
-    id = db.column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True)
     # state,type,output,alias,pos_x,pos_y
     state = db.Column(db.Integer, default=0)
     pos_x = db.Column(db.Float)
     pos_y = db.Column(db.Float)
-    type = db.Column(db.String(20),default='HOST')
+    type = db.Column(db.String(20), default='HOST')
     output = db.Column(db.Text())
-    alias = db.Column(db.String(64), unique=True, index=True)
+    alias = db.Column(db.String(64), index=True)
     graph_id = db.Column(db.Integer, db.ForeignKey('graphs.id'))
     # 以本节点为目标的link集合
     sources = db.relationship('Link',
@@ -128,18 +142,29 @@ class Node(db.Model):
                               backref=db.backref('source', lazy='joined'),
                               lazy='dynamic',
                               cascade='all, delete-orphan')
+    @property
+    def serialize(self):
+        """Return object data in easily serializeable format"""
+        return {
+            'id': self.id,
+            'state': self.state,
+            'pos_x': self.pos_x,
+            'pos_y': self.pos_y,
+            'output': self.output,
+            'alias': self.alias
+        }
     @staticmethod
     def generate_fake(count=3):
         seed()
-        graph = Graph.query.order_by(Graph.timestamp.desc()).first()
+        graph = Graph.query.order_by(Graph.id.desc()).first()
         for i in range(count):
             n = Node(state=randint(0, 3),
                      pos_x=randint(0, 1000),
                      pos_y=randint(0, 1000),
-                     output =forgery_py.address.street_address(),
-                     alias =forgery_py.name.first_name(),
-                     graph =graph
-            )
+                     output=forgery_py.address.street_address(),
+                     alias=forgery_py.name.full_name(),
+                     graph=graph
+                     )
             db.session.add(n)
             db.session.commit()
 
@@ -161,17 +186,6 @@ class Node(db.Model):
         return self.sources.filter_by(
             source_id=node.id).first() is not None
 
-    def to_json(self):
-        json_node ={
-            'id': self.id,
-            'alias': self.alias,
-            'state': self.state,
-            'type': self.type,
-            'output': self.output,
-            'pos_x': self.pos_x,
-            'pos_y': self.pos_y
-        }
-        return json.dumps(json_node)
 
     def __repr__(self):
         return '<User %r>' % self.alias
@@ -180,6 +194,7 @@ class Node(db.Model):
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
+    role_id = db.Column(db.Integer, db.ForeignKey('roles.id'))
     email = db.Column(db.String(64), unique=True, index=True)
     username = db.Column(db.String(64), unique=True, index=True)
     password_hash = db.Column(db.String(128))
@@ -190,14 +205,14 @@ class User(UserMixin, db.Model):
 
     def __init__(self, **kwargs):
         super(User, self).__init__(**kwargs)
-        # if self.role is None:
-        #     if self.email == current_app.config['FLASKY_ADMIN']:
-        #         self.role = Role.query.filter_by(permissions=0xff).first()
-        #     if self.role is None:
-        #         self.role = Role.query.filter_by(default=True).first()
-        if self.email is not None and self.avatar_hash is None:
-            self.avatar_hash = hashlib.md5(
-                self.email.encode('utf-8')).hexdigest()
+        if self.role is None:
+            if self.email == current_app.config['FLASKY_ADMIN']:
+                self.role = Role.query.filter_by(permissions=0xff).first()
+            if self.role is None:
+                self.role = Role.query.filter_by(default=True).first()
+                # if self.email is not None and self.avatar_hash is None:
+                #     self.avatar_hash = hashlib.md5(
+                #         self.email.encode('utf-8')).hexdigest()
 
     @property
     def password(self):
@@ -276,16 +291,6 @@ class User(UserMixin, db.Model):
         self.last_seen = datetime.utcnow()
         db.session.add(self)
 
-    def gravatar(self, size=100, default='identicon', rating='g'):
-        if request.is_secure:
-            url = 'https://secure.gravatar.com/avatar'
-        else:
-            url = 'http://www.gravatar.com/avatar'
-        hash = self.avatar_hash or hashlib.md5(
-            self.email.encode('utf-8')).hexdigest()
-        return '{url}/{hash}?s={size}&d={default}&r={rating}'.format(
-            url=url, hash=hash, size=size, default=default, rating=rating)
-
     def __repr__(self):
         return '<User %r>' % self.username
 
@@ -341,13 +346,14 @@ class Post(db.Model):
 
 class Ssh(db.Model):
     __tablename__ = 'sshs'
-    id = db.column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True)
     hostname = db.Column(db.String)
     port = db.Column(db.Integer)
     username = db.Column(db.String)
     password = db.Column(db.String)
     command = db.Column(db.String)
     regexSshs = db.relationship('RegexSsh', backref='ssh', lazy='dynamic')
+
     @staticmethod
     def exec(hostname, port, username, password, command):
         try:
@@ -362,11 +368,13 @@ class Ssh(db.Model):
             print(e)
             return
         ssh.close()
+
+
 # 待实现
 class RegexSsh(db.Model):
     # pattern,state,type,output,alias,pos_x,pos_y
     __tablename__ = 'regexSshs'
-    id = db.column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True)
     ssh_id = db.Column(db.Integer, db.ForeignKey('sshs.id'))
     pattern = db.Column(db.String)
     g_state = db.Column(db.Integer)
@@ -379,5 +387,6 @@ class RegexSsh(db.Model):
     @staticmethod
     def matches(readLines, g_alias, g_state, g_pos_x, g_pos_y, g_type, g_output):
         pass
+
 
 db.event.listen(Post.body, 'set', Post.on_changed_body)
