@@ -76,6 +76,7 @@ class Graph(db.Model):
     @property
     def serialize_links(self):
         return [item.serialize for item in self.links]
+
     @staticmethod
     def generate_fake(count=1):
         seed()
@@ -83,7 +84,19 @@ class Graph(db.Model):
             graph = Graph(timestamp=forgery_py.date.date(True))
             db.session.add(graph)
             db.session.commit()
+        Node.generate_fake(5)
+        Link.generate_fake(8)
 
+    def generate_change(self, count):
+        seed()
+        node_count = Node.query.filter_by(graph=self).count()
+        link_count = Link.query.filter_by(graph=self).count()
+        for i in range(count):
+            self.nodes[randint(0, node_count - 1)].change_state()
+        # Node.generate_fake(1)
+        # Link.generate_fake(1)
+        # Node.delete_fake(1)
+        # Link.delete_fake(1)
 
 
 class Link(db.Model):
@@ -103,6 +116,7 @@ class Link(db.Model):
             'target': self.target_id,
             'type': self.id
         }
+
     @staticmethod
     def generate_fake(count=3):
         seed()
@@ -111,12 +125,25 @@ class Link(db.Model):
         for i in range(count):
             source = Node.query.filter_by(graph=graph).offset(randint(0, node_count - 1)).first()
             target = Node.query.filter_by(graph=graph).offset(randint(0, node_count - 1)).first()
-            link = Link(source=source,
-                        target=target,
-                        graph=graph
-                        )
-            db.session.add(link)
-            db.session.commit()
+            if (source != target):
+                link = Link(source=source,
+                            target=target,
+                            graph=graph
+                            )
+                db.session.add(link)
+                db.session.commit()
+
+    @staticmethod
+    def delete_fake(count=1):
+        seed()
+        graph = Graph.query.order_by(Graph.id.desc()).first()
+        link_count = Link.query.filter_by(graph=graph).count()
+        if (link_count > 1):
+            for i in range(count):
+                link = Link.query.filter_by(graph=graph).offset(randint(0, link_count - 1)).first()
+                link.graph = None
+                db.session.delete(link)
+                db.session.commit()
 
 
 class Node(db.Model):
@@ -142,17 +169,21 @@ class Node(db.Model):
                               backref=db.backref('source', lazy='joined'),
                               lazy='dynamic',
                               cascade='all, delete-orphan')
+
     @property
     def serialize(self):
         """Return object data in easily serializeable format"""
         return {
             'id': self.id,
+            'type': self.type,
             'state': self.state,
             'pos_x': self.pos_x,
             'pos_y': self.pos_y,
             'output': self.output,
-            'alias': self.alias
+            'alias': self.alias,
+            'graph_id': self.graph_id
         }
+
     @staticmethod
     def generate_fake(count=3):
         seed()
@@ -167,6 +198,29 @@ class Node(db.Model):
                      )
             db.session.add(n)
             db.session.commit()
+
+    @staticmethod
+    def delete_fake(count=1):
+        seed()
+        graph = Graph.query.order_by(Graph.id.desc()).first()
+        nodes = Graph.query.all()
+        node_count = Node.query.filter_by(graph=graph).count()
+        if (node_count > 1):
+            for i in range(count):
+                node = Node.query.filter_by(graph=graph).offset(randint(0, node_count - 1)).first()
+                for n in nodes:
+                    if (node.is_linked_by(n) or node.is_linking(n)):
+                        node.unlink(n)
+                        n.unlink(node)
+                node.graph = None
+                db.session.delete(node)
+                db.session.commit()
+
+    def change_state(self):
+        seed()
+        self.state = randint(0, 3)
+        db.session.add(self)
+        db.session.commit()
 
     def link(self, node):
         if not self.is_linking(node):
@@ -185,7 +239,6 @@ class Node(db.Model):
     def is_linked_by(self, node):
         return self.sources.filter_by(
             source_id=node.id).first() is not None
-
 
     def __repr__(self):
         return '<User %r>' % self.alias

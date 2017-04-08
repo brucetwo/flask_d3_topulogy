@@ -2,6 +2,7 @@
 {% import "bootstrap/wtf.html" as wtf %}
 {% import "common/_macros.html" as macros %}
 {% import "_topuforce.html" as topumacros %}
+{% import "_ad.html" as abmacros %}
 {% block title %}TOPULOGY{% endblock %}
 {% block head %}
 {{ super() }}
@@ -24,27 +25,28 @@
 <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.5/socket.io.min.js"></script>
 <script type="text/javascript" charset="utf-8">
     var new_data={"nodes":[],"links":[]};
-    $(document).ready(function () {
+    $(function () {
         namespace = '/test';
+        async_mode = 'eventlet'
+        {{ topumacros.topu() }}
         var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port + namespace);
-        {{ topumacros.topu(new_data) }}
         socket.on('connect', function () {
-            //str=JSON.stringify(msg.graph)
-            $('#log').append('<br>' + $('<div/>').text('conect').html());
+            d3.select("#log").text("connect");
         });
         window.setInterval(function () {
-            socket.emit('my_ping');
+            socket.emit('ping');
         }, 2000);
-        socket.on('my_pong', function (msg) {
+        socket.on('pong', function (msg) {
             new_data=JSON.parse(msg.data)
             var str = JSON.stringify(msg.data)
-            reloadData();
-            d3.select("#log").text("f" + (new Date).getSeconds() + str);
+//            d3.select("#log").text("" + (new Date).getSeconds()+'s \n' + str);
         });
+        d3.interval(function() {
+		 		reloadData();
+		 	}, 2000, d3.now());
     })
 </script>
 {% endblock %}
-
 {% block page_content %}
 <div class="page-header">
     <h1>Hello, {% if current_user.is_authenticated %}{{ current_user.username }}{% else %}游客{% endif %}!</h1>

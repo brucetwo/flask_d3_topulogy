@@ -14,32 +14,25 @@ app = create_app(os.getenv('FLASK_CONFIG') or 'default')
 manager = Manager(app)
 migrate = Migrate(app, db)
 
-async_mode = None
+async_mode = 'eventlet'
 socketio = SocketIO(app, async_mode=async_mode)
 thread = None
 
 
-#
-# def background_thread():
-#     """send server generated events to clients."""
-#     count = 0
-#     while True:
-#         socketio.sleep(2)
-#         # Graph.generate_fake(1)
-#         # Node.generate_fake(15)
-#         # Link.generate_fake(24)
-#         # graph = Graph.query.order_by(Graph.timestamp.desc()).first().to_json();
-#         # count = count + 1;
-#         socketio.emit('eb', {'data': 'ff'}, namespace='/test')
+def background_thread():
+    """send server generated events to clients."""
+    while True:
+        socketio.sleep(2)
+        graph = Graph.query.order_by(Graph.id.desc()).first()
+        graph.generate_change(1)
+        socketio.emit('bg', {'data': json.dumps(graph.serialize)}, namespace='/test')
 
 
-@socketio.on('my_ping', namespace='/test')
+@socketio.on('ping', namespace='/test')
 def ping_pong():
-    Graph.generate_fake(1)
-    Node.generate_fake(5)
-    Link.generate_fake(6)
-    graph = Graph.query.order_by(Graph.id.desc()).first();
-    emit('my_pong', {'data': json.dumps(graph.serialize)})
+    graph = Graph.query.order_by(Graph.id.desc()).first()
+    graph.generate_change(1)
+    emit('pong', {'data': json.dumps(graph.serialize)})
 
 
 # def collect_date():
@@ -57,7 +50,7 @@ def ping_pong():
 
 def make_shell_context():
     return dict(app=app, db=db, User=User, Role=Role, Permission=Permission,
-                Post=Post)
+                Post=Post, Graph=Graph, Node=Node, Link=Link)
 
 
 manager.add_command("shell", Shell(make_context=make_shell_context))
