@@ -74,4 +74,7 @@ def run():
 
 
 if __name__ == '__main__':
-    manager.run()
+    # manager.run()
+    socketio.run(app,
+                     host='127.0.0.1',
+                     port=5000)
