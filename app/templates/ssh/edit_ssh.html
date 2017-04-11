@@ -1,13 +1,16 @@
 {% extends "base.html" %}
 {% import "bootstrap/wtf.html" as wtf %}
 
-{% block title %}Flasky - Register{% endblock %}
+{% block title %}TOPULOGY-ssh{% endblock %}
 
 {% block page_content %}
 <div class="page-header">
-    <h1>Register</h1>
+    <h1>SSH</h1>
 </div>
-<div class="col-md-4">
+<div class="col-sm-3">
     {{ wtf.quick_form(form) }}
+</div>
+<div class="col-sm-9" style="background-color: black;height: 400px">
+    <output class="col-sm-12 row-sm-12" >等待连接...</output>
 </div>
 {% endblock %}

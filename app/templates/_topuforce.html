@@ -11,7 +11,7 @@
 		 	var link,node,node_text,path,linklabels;
 		 	var graph = {links:[],nodes:[]};
 		 	var div = d3.select("body").append("div")
- 			.attr("class", "tooltip")
+ 			.attr("class", "col-sm-10")
  			.style("opacity", 0);
 		 	//转换数据为力导向图数据一般使用d3.forceSimulation如下代码：
 		 	var simulation = d3.forceSimulation()
@@ -123,7 +123,7 @@
 					}
 					return s;
 		         });
-		 		//new ，重复了好像
+		 		//new
 		 		linklabelsEnter.append('textPath')
 		         .attr('xlink:href',function(d,i) {return '#link'+i})
 		         .style("pointer-events", "none")
@@ -340,7 +340,7 @@
 		 	      });
 
 
-		 		//update
+//		 		//update
 		 		node.select("image").attr("xlink:href", function(d, i) {
 	 				if (d.type == "GROUP") {
 	 					return "{{ url_for('static', filename='group.png') }}";

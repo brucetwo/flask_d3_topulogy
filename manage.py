@@ -14,7 +14,7 @@ app = create_app(os.getenv('FLASK_CONFIG') or 'default')
 manager = Manager(app)
 migrate = Migrate(app, db)
 
-async_mode = 'eventlet'
+async_mode = None
 socketio = SocketIO(app, async_mode=async_mode)
 thread = None
 

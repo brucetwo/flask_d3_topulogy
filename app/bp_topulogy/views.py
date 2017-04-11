@@ -40,6 +40,17 @@ def index():
     # show_force = bool(request.cookies.get('show_force', ''))
     return render_template('index.html', graph=graph, show_force=show_force)
 
+@topulogy.route('/dispatch', methods=['GET', 'POST'])
+@login_required
+def dispatch():
+    form = PostForm()
+    if form.validate_on_submit():
+        post.body = form.body.data
+        db.session.add(post)
+        flash('The post has add.')
+        return redirect(url_for('.post', id=post.id))
+    return render_template('dispatch/post.html', form=form)
+
 
 @topulogy.route('/user/<username>')
 def user(username):

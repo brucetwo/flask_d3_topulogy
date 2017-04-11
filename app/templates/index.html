@@ -1,8 +1,8 @@
-{% extends "common/base.html" %}
+{% extends "base.html" %}
 {% import "bootstrap/wtf.html" as wtf %}
-{% import "common/_macros.html" as macros %}
+{% import "_macros.html" as macros %}
 {% import "_topuforce.html" as topumacros %}
-{% import "_ad.html" as abmacros %}
+<!--{% import "_topuBundle.html" as topu1macros %}-->
 {% block title %}TOPULOGY{% endblock %}
 {% block head %}
 {{ super() }}
@@ -31,25 +31,27 @@
         {{ topumacros.topu() }}
         var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port + namespace);
         socket.on('connect', function () {
-            d3.select("#log").text("connect");
+//            d3.select("#log").text("connect");
         });
         window.setInterval(function () {
             socket.emit('ping');
-        }, 2000);
+        }, 1000);
         socket.on('pong', function (msg) {
-            new_data=JSON.parse(msg.data)
-            var str = JSON.stringify(msg.data)
+            new_data=JSON.parse(msg.data);
+            var str = JSON.stringify(msg.data);
+
 //            d3.select("#log").text("" + (new Date).getSeconds()+'s \n' + str);
         });
         d3.interval(function() {
 		 		reloadData();
-		 	}, 2000, d3.now());
+//		 		 {{ topu1macros.topu1() }}
+		 	}, 1000, d3.now());
     })
 </script>
 {% endblock %}
 {% block page_content %}
 <div class="page-header">
-    <h1>Hello, {% if current_user.is_authenticated %}{{ current_user.username }}{% else %}游客{% endif %}!</h1>
+    <h1>{% if current_user.is_authenticated %}力导图{% else %}游客{% endif %}</h1>
 </div>
 <div id="log"></div>
 {% endblock %}

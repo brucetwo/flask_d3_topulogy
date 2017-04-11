@@ -51,7 +51,7 @@ def index():
             session['readLines']=readLines
             return redirect(url_for('.regex', id=ssh.id))
             flash('ssh success')
-    return render_template('index.html')
+    return render_template('ssh/edit_ssh.html', form=sshForm)
 
 @bp_ssh.route('/regex/<int:id>')
 @login_required

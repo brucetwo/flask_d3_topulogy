@@ -51,5 +51,5 @@ class NameForm(FlaskForm):
 
 
 class PostForm(FlaskForm):
-    body = PageDownField("What's on your mind?", validators=[Required()])
+    body = PageDownField("code", validators=[Required()])
     submit = SubmitField('Submit')

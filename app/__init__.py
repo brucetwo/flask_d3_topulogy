@@ -36,4 +36,7 @@ def create_app(config_name):
     from .bp_auth import auth as auth_blueprint
     app.register_blueprint(auth_blueprint, url_prefix='/auth')
 
+    from .bp_ssh import bp_ssh as ssh_blueprint
+    app.register_blueprint(ssh_blueprint, url_prefix='/bp_ssh')
+
     return app
