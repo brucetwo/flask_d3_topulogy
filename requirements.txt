@@ -7,6 +7,8 @@ cffi==1.10.0
 click==6.7
 cryptography==1.8.1
 dominate==2.3.1
+enum-compat==0.0.2
+eventlet==0.21.0
 Flask==0.12.1
 Flask-Bootstrap==3.3.7.1
 Flask-Login==0.4.0
@@ -18,6 +20,9 @@ Flask-Script==2.0.5
 Flask-SocketIO==2.8.6
 Flask-SQLAlchemy==2.2
 Flask-WTF==0.14.2
+ForgeryPy==0.1
+greenlet==0.4.12
+gunicorn==19.7.1
 html5lib==0.999999999
 idna==2.5
 itsdangerous==0.24
