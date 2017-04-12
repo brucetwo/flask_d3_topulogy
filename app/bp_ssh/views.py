@@ -44,7 +44,7 @@ def index():
         ssh = Ssh(hostname=sshForm.hostname.data, port=sshForm.port.data, username=sshForm.username.data,
                   password=sshForm.password.data,
                   command=sshForm.command.data)
-        readLines = Ssh.exec(sshForm.hostname.data, sshForm.port.data, sshForm.username.data, sshForm.password.data,
+        readLines = Ssh.execq(sshForm.hostname.data, sshForm.port.data, sshForm.username.data, sshForm.password.data,
                              command=sshForm.command.data)
         if readLines:
             db.session.add(ssh)
