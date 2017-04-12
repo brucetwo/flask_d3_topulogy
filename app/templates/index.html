@@ -31,7 +31,7 @@
         {{ topumacros.topu() }}
         var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port + namespace);
         socket.on('connect', function () {
-//            d3.select("#log").text("connect");
+            d3.select("#log").text("connect");
         });
         window.setInterval(function () {
             socket.emit('ping');
