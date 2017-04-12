@@ -1,3 +1,4 @@
+#coding=utf-8
 from flask import Blueprint
 
 topulogy = Blueprint('topulogy', __name__)

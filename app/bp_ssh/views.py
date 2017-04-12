@@ -1,3 +1,4 @@
+#coding=utf-8
 from flask import render_template, redirect, url_for, abort, flash, request, \
     current_app, session
 from flask_login import login_required

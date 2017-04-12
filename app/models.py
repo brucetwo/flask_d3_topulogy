@@ -1,3 +1,4 @@
+# -*- coding: UTF-8 -*-
 from datetime import datetime
 import hashlib
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -421,8 +422,6 @@ class Ssh(db.Model):
             return
         ssh.close()
 
-
-# 待实现
 class RegexSsh(db.Model):
     # pattern,state,type,output,alias,pos_x,pos_y
     __tablename__ = 'regexSshs'
