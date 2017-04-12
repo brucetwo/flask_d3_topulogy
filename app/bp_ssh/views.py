@@ -67,5 +67,5 @@ def regexSsh(id):
 @bp_ssh.route('/dispatch')
 @login_required
 def dispatch():
-
+    regexForm=None
     return render_template('index.html', regexForm=regexForm, readLines=session.get('readLines'))
