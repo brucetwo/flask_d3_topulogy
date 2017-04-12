@@ -407,7 +407,7 @@ class Ssh(db.Model):
     regexSshs = db.relationship('RegexSsh', backref='ssh', lazy='dynamic')
 
     @staticmethod
-    def exec(hostname, port, username, password, command):
+    def execq(hostname, port, username, password, command):
         try:
             ssh = paramiko.SSHClient()
             ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
