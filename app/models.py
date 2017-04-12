@@ -1,10 +1,10 @@
 from datetime import datetime
-import hashlib, json
+import hashlib
 from werkzeug.security import generate_password_hash, check_password_hash
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 from markdown import markdown
 import bleach, paramiko
-from flask import current_app, request, jsonify
+from flask import current_app
 from flask_login import UserMixin, AnonymousUserMixin
 from . import db, login_manager
 from random import seed, randint
@@ -149,7 +149,7 @@ class Link(db.Model):
 class Node(db.Model):
     __tablename__ = 'nodes'
     id = db.Column(db.Integer, primary_key=True)
-    # state,type,output,alias,pos_x,pos_y
+
     state = db.Column(db.Integer, default=0)
     pos_x = db.Column(db.Float)
     pos_y = db.Column(db.Float)
@@ -157,13 +157,12 @@ class Node(db.Model):
     output = db.Column(db.Text())
     alias = db.Column(db.String(64), index=True)
     graph_id = db.Column(db.Integer, db.ForeignKey('graphs.id'))
-    # 以本节点为目标的link集合
     sources = db.relationship('Link',
                               foreign_keys=[Link.target_id],
                               backref=db.backref('target', lazy='joined'),
                               lazy='dynamic',
                               cascade='all, delete-orphan')
-    # 以本节点为出发点的link集合
+
     targets = db.relationship('Link',
                               foreign_keys=[Link.source_id],
                               backref=db.backref('source', lazy='joined'),
