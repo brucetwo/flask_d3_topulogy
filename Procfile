@@ -1,1 +1,1 @@
-web: gunicron --worker-class eventlet -w 1 manage:app
+web: gunicron --worker-class eventlet -w 1 run:app
