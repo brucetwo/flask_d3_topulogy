@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+{% import "_macros.html" as macros %}
+{% import "_topuforce.html" as topumacros %}
+<!--{% import "_topuBundle.html" as topu1macros %}-->
+{% block title %}TOPULOGY{% endblock %}
+{% block head %}
+{{ super() }}
+<style type="text/css">
+    div.tooltip {
+        position: absolute;
+        text-align: center;
+        width: 300px;
+        height: auto;
+        padding: 2px;
+        font: 12px sans-serif;
+        background: lightsteelblue;
+        border: 0px;
+        border-radius: 8px;
+        pointer-events: none;
+    }
+</style>
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script type="text/javascript" src="//code.jquery.com/jquery-1.4.2.min.js"></script>
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.5/socket.io.min.js"></script>
+<script type="text/javascript" charset="utf-8">
+    var new_data={"nodes":[],"links":[]};
+    $(function () {
+        namespace = '/test';
+        async_mode = 'eventlet'
+        {{ topumacros.topu() }}
+        var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port + namespace);
+        socket.on('connect', function () {
+            d3.select("#log").text("connect");
+        });
+        window.setInterval(function () {
+            socket.emit('ping');
+        }, 1000);
+        socket.on('pong', function (msg) {
+            new_data=JSON.parse(msg.data);
+            var str = JSON.stringify(msg.data);
+
+//            d3.select("#log").text("" + (new Date).getSeconds()+'s \n' + str);
+        });
+        d3.interval(function() {
+		 		reloadData();
+//		 		 {{ topu1macros.topu1() }}
+		 	}, 1000, d3.now());
+    })
+</script>
+{% endblock %}
+{% block page_content %}
+<div class="page-header">
+    <h1>{% if current_user.is_authenticated %}力导图{% else %}游客{% endif %}</h1>
+</div>
+<div id="log"></div>
+{% endblock %}
+{% block scripts %}
+{{ super() }}
+{{ pagedown.include_pagedown() }}
+{% endblock %}

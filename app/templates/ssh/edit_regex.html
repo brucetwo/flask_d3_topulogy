@@ -5,9 +5,12 @@
 
 {% block page_content %}
 <div class="page-header">
-    <h1>SSH</h1>
+    <h1>SSH-Regex</h1>
 </div>
 <div class="col-sm-3">
-    {{ wtf.quick_form(form) }}
+    {{ wtf.quick_form(regexForm) }}
+</div>
+<div class="col-sm-9" style="background-color: black;height: 400px">
+    <output class="col-sm-12 row-sm-12" >{{readLines}}</output>
 </div>
 {% endblock %}

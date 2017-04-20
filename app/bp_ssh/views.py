@@ -50,7 +50,7 @@ def index():
             db.session.add(ssh)
             db.session.commit()
             session['readLines']=readLines
-            return redirect(url_for('.regex', id=ssh.id))
+            return redirect(url_for('.regexSsh', id=ssh.id))
             flash('ssh success')
     return render_template('ssh/edit_ssh.html', form=sshForm)
 
@@ -63,7 +63,7 @@ def regexSsh(id):
         return redirect(url_for('topulogy.index'))
         flash('changessh success')
 
-    return render_template('edit_post.html', regexForm=regexForm, readLines=session.get('readLines'))
+    return render_template('ssh/edit_regex.html', regexForm=regexForm, readLines=session.get('readLines'))
 
 @bp_ssh.route('/dispatch')
 @login_required

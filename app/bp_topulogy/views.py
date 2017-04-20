@@ -1,11 +1,12 @@
-#coding=utf-8
+# coding=utf-8
 from flask import render_template, redirect, url_for, abort, flash, request, \
     current_app
 from flask_login import login_required, current_user
 from flask_sqlalchemy import get_debug_queries
+from werkzeug import security
 from . import topulogy
 from .forms import PostForm
-from .. import db
+from .. import db, codefiles
 from ..models import Permission, Role, User, Post, Graph
 from ..decorators import admin_required
 
@@ -41,16 +42,27 @@ def index():
     # show_force = bool(request.cookies.get('show_force', ''))
     return render_template('index.html', graph=graph, show_force=show_force)
 
-@topulogy.route('/dispatch', methods=['GET', 'POST'])
+
+@topulogy.route('/upload', methods=['GET', 'POST'])
 @login_required
-def dispatch():
-    form = PostForm()
-    if form.validate_on_submit():
-        post.body = form.body.data
-        db.session.add(post)
-        flash('The post has add.')
-        return redirect(url_for('.post', id=post.id))
-    return render_template('dispatch/post.html', form=form)
+def upload():
+    if request.method == 'POST' and 'codefile' in request.files:
+        filename = codefiles.save(request.files['codefile'])
+        return redirect(url_for('.show', name=filename))
+    return render_template('dispatch/dispatch.html', output=None)
+
+
+@topulogy.route('/codefile/<name>')
+def show(name):
+    if name is None:
+        abort(404)
+    url = codefiles.url(name)
+    file_object = open(url)
+    try:
+        output = file_object.read()
+    finally:
+        file_object.close()
+    return render_template('dispatch/dispatch.html', output=output)
 
 
 @topulogy.route('/user/<username>')
@@ -68,7 +80,7 @@ def user(username):
 @topulogy.route('/post/<int:id>')
 def post(id):
     post = Post.query.get_or_404(id)
-    return render_template('post.html', posts=[post])
+    return render_template('dispatch/post.html', post=post)
 
 
 @topulogy.route('/edit/<int:id>', methods=['GET', 'POST'])

@@ -94,10 +94,10 @@ class Graph(db.Model):
         link_count = Link.query.filter_by(graph=self).count()
         for i in range(count):
             self.nodes[randint(0, node_count - 1)].change_state()
-        # Node.generate_fake(1)
-        # Link.generate_fake(1)
-        # Node.delete_fake(1)
-        # Link.delete_fake(1)
+            # Node.generate_fake(1)
+            # Link.generate_fake(1)
+            # Node.delete_fake(1)
+            # Link.delete_fake(1)
 
 
 class Link(db.Model):
@@ -368,7 +368,6 @@ class Post(db.Model):
     __tablename__ = 'posts'
     id = db.Column(db.Integer, primary_key=True)
     body = db.Column(db.Text)
-    body_html = db.Column(db.Text)
     timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
     author_id = db.Column(db.Integer, db.ForeignKey('users.id'))
 
@@ -414,13 +413,22 @@ class Ssh(db.Model):
             ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             ssh.connect(hostname, port, username, password)
             stdin, stdout, stderr = ssh.exec_command(command)
-            print(stdout.readlines())
-            if stdout.readlines():
-                return stdout.readlines()
+            res = stdout.readlines()
+            if res:
+                return res
         except paramiko.SSHException as e:
             print(e)
             return
         ssh.close()
+
+    @staticmethod
+    def execUp(hostname, port, username, password, sfilename, tfilename):
+        t = paramiko.Transport((hostname, port))
+        t.connect(username=username, password=password)
+        sftp = paramiko.SFTPClient.from_transport(t)
+        res = sftp.put(sfilename, tfilename)
+        return res
+
 
 class RegexSsh(db.Model):
     # pattern,state,type,output,alias,pos_x,pos_y
