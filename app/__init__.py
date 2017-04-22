@@ -1,4 +1,4 @@
-#coding=utf-8
+# coding=utf-8
 from flask import Flask
 from flask_bootstrap import Bootstrap
 from flask_mail import Mail
@@ -7,14 +7,14 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_pagedown import PageDown
 from config import config
-from flask_uploads import UploadSet, configure_uploads
+from flask_uploads import configure_uploads, UploadSet
 
 bootstrap = Bootstrap()
 mail = Mail()
 moment = Moment()
 db = SQLAlchemy()
 pagedown = PageDown()
-codefiles=uploadSet('codefiles')
+codefiles = UploadSet('codefiles')
 
 login_manager = LoginManager()
 login_manager.session_protection = 'strong'

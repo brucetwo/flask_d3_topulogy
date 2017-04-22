@@ -18,6 +18,7 @@ class Config:
     FLASKY_ADMIN = os.environ.get('FLASKY_ADMIN')
     FLASKY_POSTS_PER_PAGE = 20
     UPLOADED_FILES_DEST = os.path.join(basedir, 'uploads')
+    UPLOADS_DEFAULT_DEST = os.path.join(basedir, 'uploads')
     @staticmethod
     def init_app(app):
         pass

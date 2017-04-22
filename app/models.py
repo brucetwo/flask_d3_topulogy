@@ -92,6 +92,8 @@ class Graph(db.Model):
         seed()
         node_count = Node.query.filter_by(graph=self).count()
         link_count = Link.query.filter_by(graph=self).count()
+        for eachn in self.nodes:
+            eachn.change_output()
         for i in range(count):
             self.nodes[randint(0, node_count - 1)].change_state()
             # Node.generate_fake(1)
@@ -154,7 +156,7 @@ class Node(db.Model):
     state = db.Column(db.Integer, default=0)
     pos_x = db.Column(db.Float)
     pos_y = db.Column(db.Float)
-    type = db.Column(db.String(20), default='HOST')
+    type = db.Column(db.String(20), default='NORMAL')
     output = db.Column(db.Text())
     alias = db.Column(db.String(64), index=True)
     graph_id = db.Column(db.Integer, db.ForeignKey('graphs.id'))
@@ -192,8 +194,8 @@ class Node(db.Model):
             n = Node(state=randint(0, 3),
                      pos_x=randint(0, 1000),
                      pos_y=randint(0, 1000),
-                     output=forgery_py.address.street_address(),
-                     alias=forgery_py.name.full_name(),
+                     output=str(randint(0, 100)),
+                     alias=forgery_py.internet.ip_v4(),
                      graph=graph
                      )
             db.session.add(n)
@@ -219,6 +221,11 @@ class Node(db.Model):
     def change_state(self):
         seed()
         self.state = randint(0, 3)
+        db.session.add(self)
+        db.session.commit()
+    def change_output(self):
+        seed()
+        self.output = str(randint(35, 40))
         db.session.add(self)
         db.session.commit()
 

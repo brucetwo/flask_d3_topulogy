@@ -30,9 +30,7 @@
         async_mode = 'eventlet'
         {{ topumacros.topu() }}
         var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port + namespace);
-        socket.on('connect', function () {
-            d3.select("#log").text("connect");
-        });
+
         window.setInterval(function () {
             socket.emit('ping');
         }, 1000);
@@ -51,9 +49,10 @@
 {% endblock %}
 {% block page_content %}
 <div class="page-header">
-    <h1>{% if current_user.is_authenticated %}力导图{% else %}游客{% endif %}</h1>
+    <h3>{% if current_user.is_authenticated %}力导图{% else %}游客{% endif %}</h3>
 </div>
-<div id="log"></div>
+
+<svg></svg>
 {% endblock %}
 {% block scripts %}
 {{ super() }}

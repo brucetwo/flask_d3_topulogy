@@ -30,11 +30,10 @@
         </div>
         <div class="navbar-collapse collapse">
             <ul class="nav navbar-nav">
-                <li><a href="{{ url_for('topulogy.index') }}">Home</a></li>
+                <li><a href="{{ url_for('topulogy.index') }}">拓扑图</a></li>
                 {% if current_user.is_authenticated %}
-                <li><a href="{{ url_for('bp_ssh.index') }}">SSH</a></li>
-                <li><a href="{{ url_for('topulogy.upload') }}">Dispatch</a></li>
-
+                <li><a href="{{ url_for('topulogy.upload') }}">代码分发</a></li>
+                <li><a href="{{ url_for('bp_ssh.index') }}">SSH操作</a></li>
                 {% endif %}
             </ul>
             <ul class="nav navbar-nav navbar-right">

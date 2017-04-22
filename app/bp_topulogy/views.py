@@ -1,13 +1,14 @@
 # coding=utf-8
 from flask import render_template, redirect, url_for, abort, flash, request, \
-    current_app
+    current_app, jsonify, json
 from flask_login import login_required, current_user
 from flask_sqlalchemy import get_debug_queries
+from datetime import datetime
 from werkzeug import security
 from . import topulogy
 from .forms import PostForm
 from .. import db, codefiles
-from ..models import Permission, Role, User, Post, Graph
+from ..models import Permission, Role, User, Post, Graph, Node
 from ..decorators import admin_required
 
 
@@ -41,6 +42,24 @@ def index():
     # graph = Graph.query.first_or_404()
     # show_force = bool(request.cookies.get('show_force', ''))
     return render_template('index.html', graph=graph, show_force=show_force)
+
+
+@topulogy.route('/output/<int:id>', methods=['GET', 'POST'])
+@login_required
+def output(id):
+    node = Node.query.get_or_404(id)
+    return render_template('output.html', node=node)
+
+
+@topulogy.route('/gain/<int:id>', methods=['GET', 'POST'])
+@login_required
+def gain(id):
+    node = Node.query.get_or_404(id)
+    node.change_output()
+    y = int(node.output)
+    x = datetime.now()
+    data=json.dumps({'x':x,'y':y})
+    return data
 
 
 @topulogy.route('/upload', methods=['GET', 'POST'])

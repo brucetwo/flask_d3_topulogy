@@ -1,5 +1,5 @@
-#coding=utf-8
-#!/usr/bin/env python
+# coding=utf-8
+# !/usr/bin/env python
 import os
 import paramiko
 from app.models import Graph, Node, Link
@@ -72,6 +72,14 @@ def run():
     socketio.run(app,
                  host='127.0.0.1',
                  port=5000)
+
+
+@manager.command
+def generate_fake():
+    """add a new graph for test """
+    Graph.generate_fake(1)
+    Node.generate_fake(5)
+    Link.generate_fake(6)
 
 
 if __name__ == '__main__':
