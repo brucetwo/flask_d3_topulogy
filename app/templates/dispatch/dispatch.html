@@ -14,19 +14,13 @@
          <input type=submit value=上传>
     </form>
 </div>
-<div id="editor" class="col-md-8">function foo(items) {
-    var x = "All this is syntax highlighted";
-    return x;
+<div id="editor" class="col-md-8">
+    {{output}}
 </div>
 <script src="https://ace.c9.io/build/src/ace.js" type="text/javascript" charset="utf-8"></script>
 <script>
     var editor = ace.edit("editor");
     editor.setTheme("ace/theme/monokai");
-    {% if output %}
-        editor.setValue({{output}});
-    {% else %}
-        editor.setValue('...');
-    {% endif %}
     editor.getSession().setMode("ace/mode/python");
 </script>
 {% endblock %}

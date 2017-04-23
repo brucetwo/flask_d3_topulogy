@@ -78,8 +78,6 @@ def run():
 def generate_fake():
     """add a new graph for test """
     Graph.generate_fake(1)
-    Node.generate_fake(5)
-    Link.generate_fake(6)
 
 
 if __name__ == '__main__':

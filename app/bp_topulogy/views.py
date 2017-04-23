@@ -7,7 +7,7 @@ from datetime import datetime
 from werkzeug import security
 from . import topulogy
 from .forms import PostForm
-from .. import db, codefiles
+from .. import db, files
 from ..models import Permission, Role, User, Post, Graph, Node
 from ..decorators import admin_required
 
@@ -66,16 +66,16 @@ def gain(id):
 @login_required
 def upload():
     if request.method == 'POST' and 'codefile' in request.files:
-        filename = codefiles.save(request.files['codefile'])
+        filename = files.save(request.files['codefile'])
         return redirect(url_for('.show', name=filename))
-    return render_template('dispatch/dispatch.html', output=None)
+    return render_template('dispatch/dispatch.html', output='...')
 
 
 @topulogy.route('/codefile/<name>')
 def show(name):
     if name is None:
         abort(404)
-    url = codefiles.url(name)
+    url = files.url(name)
     file_object = open(url)
     try:
         output = file_object.read()

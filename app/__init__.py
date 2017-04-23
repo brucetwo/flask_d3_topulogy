@@ -7,14 +7,14 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_pagedown import PageDown
 from config import config
-from flask_uploads import configure_uploads, UploadSet
+from flask_uploads import configure_uploads, UploadSet, SCRIPTS
 
 bootstrap = Bootstrap()
 mail = Mail()
 moment = Moment()
 db = SQLAlchemy()
 pagedown = PageDown()
-codefiles = UploadSet('codefiles')
+files = UploadSet('codefiles', SCRIPTS)
 
 login_manager = LoginManager()
 login_manager.session_protection = 'strong'
@@ -32,7 +32,7 @@ def create_app(config_name):
     db.init_app(app)
     login_manager.init_app(app)
     pagedown.init_app(app)
-    configure_uploads(app, codefiles)
+    configure_uploads(app, files)
 
     from .bp_topulogy import topulogy as main_blueprint
     app.register_blueprint(main_blueprint)
